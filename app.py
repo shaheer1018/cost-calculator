@@ -3,7 +3,8 @@ from src.helper_functions import save_animal_price_raw
 from src.helper_functions import create_members_table
 import streamlit as st
 import pandas as pd
-
+import numpy as np
+from datetime import datetime
 
 
 
@@ -32,28 +33,31 @@ def main():
     total_expenses = calculate_miscellenous_expenses(expense1, expense2, expense3, expense4, expense5, 
                                                      expense6, expense7, expense8, expense9, expense10, 
                                                      expense11, expense12, expense13)
-    
 
-    # Add a button to submit the input
-    if st.button("Submit"):
 
-        print('Total expenses: ', total_expenses)
-        net_expenses = (total_expenses - income)
-        print('Net expenses: ', net_expenses)
+    st.markdown(f"**Total expenses:** {total_expenses}")
+    net_expenses = (total_expenses - income)
+    st.markdown(f"**Net expenses:** {net_expenses}")
 
-        # Create a new DataFrame with the user input
-        new_row = {'Labour cost (animal purchasing)': expense1, 'Labour cost loading animals': expense2,
-                   'Market animal tax': expense3, 'Transportation of animals (fare)': expense4,
-                   'Miscellaneous expenses market': expense5, 'Labour cost unloading animals:': expense6,
-                   'Gaurd charges': expense7, 'Total expenses of animal food': expense8,
-                   'Labour cost butcher': expense9, 'Shoping bags for meat cost:': expense10, 
-                   'Expenses for tent etc.': expense11, 'Labour for workers': expense12, 
-                   'Expenses for lunch etc.': expense13, 'Income': income, 'Total expenses': total_expenses,
-                   'Net expenses': net_expenses}
-        df_net_expenses = pd.DataFrame([new_row])
+    # Create a new DataFrame with the user input
+    new_row = {'Labour cost (animal purchasing)': expense1, 'Labour cost loading animals': expense2,
+                'Market animal tax': expense3, 'Transportation of animals (fare)': expense4,
+                'Miscellaneous expenses market': expense5, 'Labour cost unloading animals:': expense6,
+                'Gaurd charges': expense7, 'Total expenses of animal food': expense8,
+                'Labour cost butcher': expense9, 'Shoping bags for meat cost:': expense10, 
+                'Expenses for tent etc.': expense11, 'Labour for workers': expense12, 
+                'Expenses for lunch etc.': expense13, 'Income': income, 'Total expenses': total_expenses,
+                'Net expenses': net_expenses}
+    df_net_expenses = pd.DataFrame([new_row])
 
-        # Display the updated DataFrame as a table
-        st.table(df_net_expenses)
+    # Display the updated DataFrame as a table
+    st.table(df_net_expenses)
+
+    # Convert the DataFrame to CSV format
+    df_net_expenses_csv = df_net_expenses.to_csv(index=False)
+
+    # Add a download button to allow the user to download the CSV file
+    st.download_button(label="Download table as CSV", data=df_net_expenses_csv, file_name="net_expenses.csv")
 
     
 
@@ -61,63 +65,156 @@ def main():
     #-------------------------------------------------------------
     #                  Cost per share
     #-------------------------------------------------------------
-
-    # Define the column names
-    columns = ['Animal Number', 'Animal Price', 'Expenses Per Animal', 'Total Cost Per Animal', 'Cost Per Share']
-
-    # Prompt the user to enter the number of initial rows
-    initial_rows = st.number_input("Enter the number of initial rows:", min_value=0, value=2, step=1)
-
-    # Initialize the DataFrame with the specified number of initial rows and the given columns
-    # Use appropriate data types for Columns 2, 3, and 4 (float) and Column 1 and 5 (str)
-    df_cost_per_share = pd.DataFrame(
-                                    {
-                                        'Animal Number': [0] * int(initial_rows),
-                                        'Animal Price': [0] * int(initial_rows),
-                                        'Expenses Per Animal': [0] * int(initial_rows),
-                                        'Total Cost Per Animal': [0] * int(initial_rows),
-                                        'Cost Per Share': [0] * int(initial_rows)
-                                    }
-                                )
-
-    # Function to display input fields for each row and calculate Column 4
-    def display_input_fields(df):
-        # Iterate through the rows of the DataFrame
-        for idx, row in df.iterrows():
-            # Create unique keys based on the row index for each widget
-            col1_key = f'col1_{idx}'
-            col2_key = f'col2_{idx}'
-            col3_key = f'col3_{idx}'
-            # col5_key = f'col5_{idx}'
-
-            # Display input fields for each column (except Column 4) in the row using unique keys
-            col1 = st.number_input(f"{columns[0]} (Row {idx + 1}):", value=float(row[columns[0]]), key=col1_key)
-            col2 = st.number_input(f"{columns[1]} (Row {idx + 1}):", value=float(row[columns[1]]), key=col2_key)
-            col3 = st.number_input(f"{columns[2]} (Row {idx + 1}):", value=float(row[columns[2]]), key=col3_key)
-            # Calculate Column 4 as the sum of Columns 2 and 3
-            col4 = col2 + col3
-            # Calculate Column 5 
-            col5 = col4/7
+    st.title("Cost per share")
+    
+    # Step 1: Get the number of rows from the user
+    num_rows = st.number_input("Enter the total number of animals: ", min_value=3, step=1)
+    
+    # Step 2: Initialize an empty DataFrame with the specified number of rows and 5 columns
+    if num_rows > 0:
+        # Define the data types for each column
+        dtypes = {
+            "Animal Number": float,  # Use float to allow NaN values
+            "Animal Price": float,
+            "Expenses Per Animal": float,
+            "Total Cost Per Animal": float,
+            "Cost Per Share": float,
+        }
+        
+        # Create the DataFrame with the specified data types
+        df_cost_per_share = pd.DataFrame(index=range(num_rows), columns=dtypes.keys())
+        df_cost_per_share = df_cost_per_share.astype(dtypes)  # Apply the specified data types to the DataFrame
+        
+        # Step 3: Populate the table based on user input
+        for i in range(num_rows):
+            # User input for each row
+            col1 = st.number_input(f"Enter value for Animal Number, Row {i + 1}:", key=f"col1_{i}")
+            col2 = st.number_input(f"Enter value for Animal Price, Row {i + 1}:", key=f"col2_{i}")
+            col3 = st.number_input(f"Enter value for Expenses Per Animal, Row {i + 1}:", key=f"col3_{i}")
             
-            # Update the DataFrame with the input values for Columns 1, 2, 3, and calculated value for Column 4, 5
-            df.loc[idx] = [col1, col2, col3, col4, col5]
+            # Fill in the DataFrame with the user inputs for columns 1, 2, and 3
+            df_cost_per_share.loc[i, "Animal Number"] = col1 if col1 != 0 else np.nan  # Allow NaN values in Animal Number column
+            df_cost_per_share.loc[i, "Animal Price"] = col2
+            df_cost_per_share.loc[i, "Expenses Per Animal"] = col3
+            
+            # Step 4: Calculate Column 4 as the sum of Column 2 and Column 3
+            df_cost_per_share.loc[i, "Total Cost Per Animal"] = df_cost_per_share.loc[i, "Animal Price"] + df_cost_per_share.loc[i, "Expenses Per Animal"]
+            
+            # Step 5: Calculate Column 5 as Column 4 divided by 7
+            df_cost_per_share.loc[i, "Cost Per Share"] = df_cost_per_share.loc[i, "Total Cost Per Animal"] / 7
+        
+        # Step 6: Display the final DataFrame as a table
+        st.table(df_cost_per_share)
 
-    # Display input fields for the DataFrame
-    display_input_fields(df_cost_per_share)
+        # Convert the DataFrame to CSV format
+        df_cost_per_share_csv = df_cost_per_share.to_csv(index=False)
 
-    # Button to add a new row
-    if st.button("Add Row"):
-        # Append an empty row to the DataFrame
-        new_row = pd.Series([0, 0, 0, 0, 0], index=columns)
-        df = df.append(new_row, ignore_index=True)
-        # Redisplay input fields for the updated DataFrame
-        display_input_fields(df)
-
-    # Display the DataFrame as a table
-    st.write("Your Data Table:")
-    st.table(df)
+        # Add a download button to allow the user to download the CSV file
+        st.download_button(label="Download table as CSV", data=df_cost_per_share_csv, file_name="cost_per_share.csv")
 
 
+    #-------------------------------------------------------------
+    #                 Total number of animals
+    #-------------------------------------------------------------
+    total_animals = len(df_cost_per_share)
+    st.markdown(f"**Total animals:** {total_animals}")
+
+
+    #-------------------------------------------------------------
+    #                Total expenses per animal
+    #-------------------------------------------------------------
+    net_expenses_per_animal = net_expenses / total_animals
+    st.markdown(f"**Net expenses per animal:** {net_expenses_per_animal}")
+
+
+
+    #-------------------------------------------------------------
+    #                Animal price raw
+    #-------------------------------------------------------------
+    st.title("Animal price raw")
+    
+    # Get the number of rows from the user
+    num_rows_animal_price_raw = st.number_input("Enter the number of animals: ", min_value=3, step=1)
+    
+    # Initialize an empty DataFrame with the specified number of rows and 2 columns
+    if num_rows > 0:
+        # Define the data types for each column
+        dtypes = {
+            "Animal Number": float,  # Use float to allow NaN values
+            "Animal Price": float}
+        
+        # Create the DataFrame with the specified data types
+        df_animal_price_raw = pd.DataFrame(index=range(num_rows_animal_price_raw), columns=dtypes.keys())
+        df_animal_price_raw = df_animal_price_raw.astype(dtypes)  # Apply the specified data types to the DataFrame
+        
+        # Step 3: Populate the table based on user input
+        for i in range(num_rows_animal_price_raw):
+            # User input for each row
+            col1 = st.number_input(f"Enter value for Animal Number, Row {i + 1}:", key=f"animal_number_raw_col_{i}")
+            col2 = st.number_input(f"Enter value for Animal Price, Row {i + 1}:", key=f"animal_price_raw_col_{i}")
+            
+            # Fill in the DataFrame with the user inputs for columns 1, 2, and 3
+            df_animal_price_raw.loc[i, "Animal Number"] = col1 if col1 != 0 else np.nan  # Allow NaN values in Animal Number column
+            df_animal_price_raw.loc[i, "Animal Price"] = col2
+            
+        
+        # Display the final DataFrame as a table
+        st.table(df_animal_price_raw)
+
+        # Convert the DataFrame to CSV format
+        df_animal_price_raw_csv = df_animal_price_raw.to_csv(index=False)
+
+        # Add a download button to allow the user to download the CSV file
+        st.download_button(label="Download table as CSV", data=df_animal_price_raw_csv, file_name="animal_price_raw.csv")
+
+    #-------------------------------------------------------------
+    #                 Total cost per animal
+    #-------------------------------------------------------------
+    st.title("Individual animal price total")
+    
+    # Copy the original DataFrame to create a new DataFrame
+    df_total_cost_per_animal = df_animal_price_raw.copy()
+    
+    # update the total price of each animal
+    df_total_cost_per_animal['Animal Price Total'] = df_total_cost_per_animal['Animal Price'] + net_expenses_per_animal
+
+    # Display the new DataFrame as a table
+    # st.subheader("Individual animal price total")
+    st.table(df_total_cost_per_animal)
+
+
+    #-------------------------------------------------------------
+    #                 Create members tables
+    #-------------------------------------------------------------
+    st.title("Create Members Information Tables")
+    
+    # Prompt the user for the number of tables they want to create
+    num_tables = st.number_input("For how many animals do you want to create tables?", min_value=1, step=1, key="num_tables")
+    members_tables_list = []
+
+
+    # Create the specified number of tables
+    for table_index in range(int(num_tables)):
+        # Add a subheader to distinguish each table
+        st.subheader(f"Table for Animal {table_index + 1}")
+        
+        # Create the table using the function, passing the table index
+        members_table = create_members_table(table_index)
+        members_tables_list.append(members_table)
+        # Display the table using Streamlit
+        st.table(members_table)
+        
+        # Optionally, provide a download button for each table as CSV
+        csv = members_table.to_csv(index=False)
+        st.download_button(
+            label=f"Download Table for animal {table_index + 1} as CSV",
+            data=csv,
+            file_name=f"members_table_animal_{table_index + 1}.csv")
+    
+    print(len(members_tables_list))
+    print(members_tables_list[0])
+
+    
 if __name__ == '__main__':
     main()
 
@@ -133,9 +230,4 @@ if __name__ == '__main__':
 
 
 
-
-# Create input widgets
-name = st.text_input("Enter your name:")
-
-city = st.text_input("Enter your city:")
 
