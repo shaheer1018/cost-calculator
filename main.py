@@ -8,24 +8,26 @@ def main():
     #-------------------------------------------------------------
     #               Calculate total expenses
     #-------------------------------------------------------------
-    expense1 = int(input('Labour cost (animal purchasing): '))
-    expense2 = int(input('Labour cost loading animals: '))  
-    expense3 = int(input('Market animal tax: '))
-    expense4 = int(input('Transportation of animals (fare): '))
-    expense5 = int(input('Miscellaneous expenses market: '))
-    expense6 = int(input('Labour cost unloading animals: '))
-    expense7 = int(input('Gaurd charges: '))
-    expense8 = int(input('Total expenses of animal food: '))
-    expense9 = int(input('Labour cost butcher: '))
-    expense10 = int(input('Shoping bags for meat cost: '))
-    expense11 = int(input('Expenses for tent etc.: '))
-    expense12 = int(input('Labour for workers: '))
-    expense13 = int(input('Expenses for lunch etc.: '))
+    expense1 = float(input('Labour cost (animal purchasing): '))
+    expense2 = float(input('Labour cost loading animals: '))  
+    expense3 = float(input('Market animal tax: '))
+    expense4 = float(input('Transportation of animals (fare): '))
+    expense5 = float(input('Miscellaneous expenses market: '))
+    expense6 = float(input('Labour cost unloading animals: '))
+    expense7 = float(input('Gaurd charges: '))
+    expense8 = float(input('Total expenses of animal food: '))
+    expense9 = float(input('Labour cost butcher: '))
+    expense10 = float(input('Shoping bags for meat cost: '))
+    expense11 = float(input('Expenses for tent etc.: '))
+    expense12 = float(input('Labour for workers: '))
+    expense13 = float(input('Expenses for lunch etc.: '))
+    income = float(input('Enter income: '))
     total_expenses = calculate_miscellenous_expenses(expense1, expense2, expense3, expense4, expense5, 
                                                      expense6, expense7, expense8, expense9, expense10, 
                                                      expense11, expense12, expense13)
     print('Total expenses: ', total_expenses)
-
+    net_expenses = total_expenses - income
+    print('Net expenses: ', net_expenses)
     #-------------------------------------------------------------
     #                 Total number of animals
     #-------------------------------------------------------------
@@ -35,8 +37,8 @@ def main():
     #-------------------------------------------------------------
     #                Total expenses per animal
     #-------------------------------------------------------------
-    total_expenses_per_animal = total_expenses / total_animals
-    print('Total expenses per animal', total_expenses_per_animal)
+    net_expenses_per_animal = net_expenses / total_animals
+    print('Total expenses per animal', net_expenses_per_animal)
 
 
     #-------------------------------------------------------------
@@ -51,7 +53,7 @@ def main():
     #                 Total cost per animal
     #-------------------------------------------------------------
     # Create a new dictionary with each value updated
-    total_cost_per_animal_dict = {key: value + total_expenses_per_animal for key, value in animal_price_raw_dict.items()}
+    total_cost_per_animal_dict = {key: value + net_expenses_per_animal for key, value in animal_price_raw_dict.items()}
     print('Total cost per animal dict')
     print(total_cost_per_animal_dict)
 
